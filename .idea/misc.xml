@@ -5,7 +5,7 @@
       <map>
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
         <entry key="app/src/main/res/layout/activity_note.xml" value="0.25245901639344265" />
-        <entry key="app/src/main/res/layout/activity_note_list.xml" value="0.31786499023437503" />
+        <entry key="app/src/main/res/layout/activity_note_list.xml" value="0.25" />
         <entry key="app/src/main/res/menu/menu_note.xml" value="0.1" />
       </map>
     </option>
