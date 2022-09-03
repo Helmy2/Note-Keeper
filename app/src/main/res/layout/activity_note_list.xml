@@ -16,11 +16,10 @@
             app:srcCompat="@android:drawable/ic_input_add"
             android:contentDescription="@string/add" />
 
-        <ListView
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/listNotes"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-        </ListView>
+            android:layout_height="match_parent"
+            tools:listitem="@layout/item_note_list"></androidx.recyclerview.widget.RecyclerView>
     </FrameLayout>
 </layout>

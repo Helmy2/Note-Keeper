@@ -1,20 +1,20 @@
 package com.example.notekeeper;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.notekeeper.databinding.ActivityNoteListBinding;
 
 import java.util.List;
 
 public class NoteListActivity extends AppCompatActivity {
-
     ActivityNoteListBinding binding;
+    NoteListAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,24 +22,33 @@ public class NoteListActivity extends AppCompatActivity {
         binding = ActivityNoteListBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         initializeDisplayContent();
-        binding.fabAdd.setOnClickListener(view -> {
-            Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
-            startActivity(intent);
-        });
+        binding.fabAdd.setOnClickListener(this::onFABAddClicked);
     }
 
     private void initializeDisplayContent() {
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
-        ArrayAdapter<NoteInfo> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, notes);
-
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        adapter = new NoteListAdapter(notes);
+        binding.listNotes.setLayoutManager(layoutManager);
         binding.listNotes.setAdapter(adapter);
-        binding.listNotes.setOnItemClickListener((adapterView, view, position, l) -> {
-            Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
-            intent.putExtra(NoteActivity.NOTE_POSITION, position);
-            startActivity(intent);
-        });
+
+        adapter.setOnItemClickedListener(this::onNoteItemClicked);
     }
 
+    private void onNoteItemClicked(int position) {
+        Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
+        intent.putExtra(NoteActivity.NOTE_POSITION, position);
+        startActivity(intent);
+    }
 
+    private void onFABAddClicked(View view) {
+        Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        adapter.notifyDataSetChanged();
+    }
 }
