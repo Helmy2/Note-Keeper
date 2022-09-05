@@ -56,8 +56,7 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteLi
         public void bind(OnItemClickListener onItemClickListener, int position, NoteInfo noteInfo) {
             if (onItemClickListener != null)
                 binding.getRoot().setOnClickListener(view -> onItemClickListener.onItemClick(position));
-            binding.textCourse.setText(noteInfo.getCourse().toString());
-            binding.textTitle.setText(noteInfo.getTitle());
+            binding.setNote(noteInfo);
         }
     }
 }
