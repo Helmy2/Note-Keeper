@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">NoteKeeper</string>
     <string name="add">Add</string>
+    <string name="send_as_email">Send as email</string>
+    <string name="cancel">Cancel</string>
+    <string name="next">Next</string>
 </resources>
