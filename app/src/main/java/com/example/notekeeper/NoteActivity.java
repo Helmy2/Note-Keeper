@@ -152,7 +152,7 @@ public class NoteActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(@NonNull Menu menu) {
         MenuItem menuItem = menu.findItem(R.id.action_next);
         int lastNoteIndex = DataManager.getInstance().getNotes().size() - 1;
-        menuItem.setVisible(notePosition < lastNoteIndex);
+        menuItem.setEnabled(notePosition < lastNoteIndex);
         return super.onPrepareOptionsMenu(menu);
     }
 
