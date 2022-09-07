@@ -6,17 +6,25 @@ import static androidx.test.espresso.Espresso.pressBack;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.typeText;
+import static androidx.test.espresso.matcher.ViewMatchers.withClassName;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.rule.ActivityTestRule;
 
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,7 +50,7 @@ public class NoteCreationTest {
         final String noteTitle = "Test note title";
         final String noteText = "This is the body of our test note";
 
-        onView(withId(R.id.fabAdd)).perform(click());
+        onView(withId(R.id.fab)).perform(click());
 
         onView(withId(R.id.spinnerCourses)).perform(click());
         onData(allOf(instanceOf(CourseInfo.class), equalTo(course)))
@@ -60,5 +68,6 @@ public class NoteCreationTest {
         assertEquals(course, note.getCourse());
         assertEquals(noteTitle, note.getTitle());
         assertEquals(noteText, note.getText());
+
     }
 }
