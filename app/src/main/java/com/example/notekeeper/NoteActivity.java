@@ -8,6 +8,7 @@ import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.notekeeper.databinding.ActivityNoteBinding;
@@ -30,6 +31,7 @@ public class NoteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityNoteBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        setSupportActionBar(binding.toolbar);
 
         viewModel = new ViewModelProvider(this).get(NoteActivityViewModel.class);
 

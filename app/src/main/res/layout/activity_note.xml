@@ -8,6 +8,23 @@
         android:layout_height="match_parent"
         tools:context=".NoteActivity">
 
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/Theme.NoteKeeper.AppBarOverlay"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:popupTheme="@style/Theme.NoteKeeper.PopupOverlay" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
         <Spinner
             android:id="@+id/spinnerCourses"
             android:layout_width="0dp"
@@ -17,7 +34,7 @@
             android:layout_marginEnd="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
 
         <EditText
             android:id="@+id/textNoteTitle"
@@ -26,6 +43,7 @@
             android:layout_marginTop="16dp"
             android:ems="10"
             android:gravity="start|top"
+            android:hint="@string/note_title"
             android:inputType="textMultiLine"
             app:layout_constraintEnd_toEndOf="@+id/spinnerCourses"
             app:layout_constraintStart_toStartOf="@+id/spinnerCourses"
@@ -38,6 +56,7 @@
             android:layout_marginTop="16dp"
             android:ems="10"
             android:gravity="start|top"
+            android:hint="@string/notes"
             android:inputType="textMultiLine"
             app:layout_constraintEnd_toEndOf="@+id/spinnerCourses"
             app:layout_constraintStart_toStartOf="@+id/spinnerCourses"
