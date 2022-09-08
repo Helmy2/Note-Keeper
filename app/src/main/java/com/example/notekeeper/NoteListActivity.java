@@ -2,7 +2,6 @@ package com.example.notekeeper;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -50,9 +49,9 @@ public class NoteListActivity extends AppCompatActivity {
             } else if (id == R.id.nav_courses) {
                 displayCourses();
             } else if (id == R.id.nav_share) {
-                handleSelection("Don't you think you've shared enough");
+                handleSelection(R.string.nav_share_message);
             } else if (id == R.id.nav_send) {
-                handleSelection("Send");
+                handleSelection(R.string.nav_send_message);
             }
 
             DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -109,8 +108,8 @@ public class NoteListActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void handleSelection(String message) {
-        Snackbar.make(binding.listNotes, message, Snackbar.LENGTH_LONG).show();
+    private void handleSelection(int message_id) {
+        Snackbar.make(binding.listNotes, message_id, Snackbar.LENGTH_LONG).show();
     }
 
     @Override
