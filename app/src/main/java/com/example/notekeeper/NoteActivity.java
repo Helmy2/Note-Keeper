@@ -7,8 +7,8 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.notekeeper.databinding.ActivityNoteBinding;
@@ -48,9 +48,25 @@ public class NoteActivity extends AppCompatActivity {
 
         readDisplayStateValues();
         saveOriginalNoteValues();
-
+        setupUpButton();
         if (!isNewNote)
             displayNote();
+    }
+
+    private void setupUpButton() {
+        ActionBar actionBar = getSupportActionBar();
+
+        // Enable the Up button
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        isCancelling = true;
+        finish();
+        return super.onSupportNavigateUp();
     }
 
     private void saveOriginalNoteValues() {
@@ -138,9 +154,6 @@ public class NoteActivity extends AppCompatActivity {
         if (id == R.id.action_send_mail) {
             sendEmail();
             return true;
-        } else if (id == R.id.action_cancel) {
-            isCancelling = true;
-            finish();
         } else if (id == R.id.action_next) {
             moveNext();
         }

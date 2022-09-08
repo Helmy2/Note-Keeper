@@ -7,11 +7,6 @@
         android:title="@string/send_as_email"
         app:showAsAction="never" />
     <item
-        android:id="@+id/action_cancel"
-        android:icon="@android:drawable/ic_menu_revert"
-        android:title="@string/cancel"
-        app:showAsAction="ifRoom" />
-    <item
         android:id="@+id/action_next"
         android:icon="@android:drawable/ic_media_next"
         android:title="@string/next"
