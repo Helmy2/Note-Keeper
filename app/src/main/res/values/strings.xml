@@ -20,4 +20,5 @@
     <string name="send">Send</string>
     <string name="nav_share_message">Don\'t you think you\'ve shared enough</string>
     <string name="nav_send_message">Send</string>
+    <string name="image">Image</string>
 </resources>
