@@ -1,16 +1,19 @@
 package com.example.notekeeper;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -41,26 +44,30 @@ public class NoteListActivity extends AppCompatActivity {
         binding.drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        binding.navView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.nav_notes) {
-                displayNotes();
-            } else if (id == R.id.nav_courses) {
-                displayCourses();
-            } else if (id == R.id.nav_share) {
-                handleSelection(R.string.nav_share_message);
-            } else if (id == R.id.nav_send) {
-                handleSelection(R.string.nav_send_message);
-            }
-
-            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-            drawer.closeDrawer(GravityCompat.START);
-            return true;
-        });
+        binding.navView.setNavigationItemSelectedListener(this::onNavigationItemSelected);
 
         initializeDisplayContent();
         binding.fab.setOnClickListener(this::onFABAddClicked);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        noteListAdapter.notifyDataSetChanged();
+        updateNavHeader();
+    }
+
+    private void updateNavHeader() {
+        View headerView = binding.navView.getHeaderView(0);
+        TextView textUserName = (TextView) headerView.findViewById(R.id.text_user_name);
+        TextView textEmailAddress = (TextView) headerView.findViewById(R.id.text_email_address);
+
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+        String userName = pref.getString("user_display_name", "");
+        String emailAddress = pref.getString("user_email_address", "");
+
+        textUserName.setText(userName);
+        textEmailAddress.setText(emailAddress);
     }
 
     private void initializeDisplayContent() {
@@ -74,6 +81,24 @@ public class NoteListActivity extends AppCompatActivity {
         courseListAdapter = new CourseListAdapter(courses);
 
         displayNotes();
+    }
+
+    private boolean onNavigationItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.nav_notes) {
+            displayNotes();
+        } else if (id == R.id.nav_courses) {
+            displayCourses();
+        } else if (id == R.id.nav_share) {
+            handleShare();
+        } else if (id == R.id.nav_send) {
+            handleSelection(R.string.nav_send_message);
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
     }
 
     private void displayNotes() {
@@ -90,6 +115,12 @@ public class NoteListActivity extends AppCompatActivity {
         courseListAdapter.setOnItemClickedListener(this::onCourseItemClicked);
 
         binding.navView.getMenu().findItem(R.id.nav_courses).setChecked(true);
+    }
+
+    private void handleShare() {
+        Snackbar.make(binding.listNotes, "Share to - " +
+                        PreferenceManager.getDefaultSharedPreferences(this).getString("user_favorite_social", ""),
+                Snackbar.LENGTH_LONG).show();
     }
 
     private void onCourseItemClicked(int position) {
@@ -136,15 +167,12 @@ public class NoteListActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        noteListAdapter.notifyDataSetChanged();
-    }
+
 }

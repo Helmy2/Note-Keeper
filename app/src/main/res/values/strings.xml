@@ -21,4 +21,30 @@
     <string name="nav_share_message">Don\'t you think you\'ve shared enough</string>
     <string name="nav_send_message">Send</string>
     <string name="image">Image</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+    <!-- General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">Your Name</string>
+
+    <string name="pref_title_email_address">Email address</string>
+    <string name="pref_default_email_address">yourname@yourhost.com</string>
+
+    <string name="pref_default_favorite_social">http://plus.google.com</string>
+    <string name="pref_title_favorite_social">Favorite social network</string>
+
+    <string-array name="pref_entries_favorite_social">
+        <item>Google+</item>
+        <item>Facebook</item>
+        <item>Twitter</item>
+    </string-array>
+    <string-array name="pref_values_favorite_social">
+        <item>http://plus.google.com</item>
+        <item>http://facebook.com</item>
+        <item>http://twitter.com</item>
+    </string-array>
+
+
 </resources>
