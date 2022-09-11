@@ -2,6 +2,7 @@ package com.example.notekeeper;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +29,7 @@ public class NoteListActivity extends AppCompatActivity {
     CourseListAdapter courseListAdapter;
     LinearLayoutManager notesLayoutManager;
     GridLayoutManager coursesLayoutManager;
+    private NoteKeeperOpenHelper dbOpenHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +38,8 @@ public class NoteListActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
+
+        dbOpenHelper = new NoteKeeperOpenHelper(this);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, binding.drawerLayout, binding.toolbar,
@@ -48,6 +52,12 @@ public class NoteListActivity extends AppCompatActivity {
 
         initializeDisplayContent();
         binding.fab.setOnClickListener(this::onFABAddClicked);
+    }
+
+    @Override
+    protected void onDestroy() {
+        dbOpenHelper.close();
+        super.onDestroy();
     }
 
     @Override
@@ -105,6 +115,8 @@ public class NoteListActivity extends AppCompatActivity {
         binding.listNotes.setLayoutManager(notesLayoutManager);
         binding.listNotes.setAdapter(noteListAdapter);
         noteListAdapter.setOnItemClickedListener(this::onNoteItemClicked);
+
+        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
 
         binding.navView.getMenu().findItem(R.id.nav_notes).setChecked(true);
     }
