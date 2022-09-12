@@ -1,30 +1,42 @@
 package com.example.notekeeper;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
 
+import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 import com.example.notekeeper.databinding.ActivityNoteBinding;
 
 import java.util.List;
 
 public class NoteActivity extends AppCompatActivity {
-    public static final String NOTE_POSITION = "com.jwhh.notekeeper.NOTE_POSITION";
-    public static final int POSITION_NOT_SET = -1;
     private ActivityNoteBinding binding;
-    private NoteInfo note;
+    private final String TAG = getClass().getSimpleName();
+    public static final String NOTE_ID = "com.jwhh.jim.notekeeper.NOTE_ID";
+    public static final String ORIGINAL_NOTE_COURSE_ID = "com.jwhh.jim.notekeeper.ORIGINAL_NOTE_COURSE_ID";
+    public static final String ORIGINAL_NOTE_TITLE = "com.jwhh.jim.notekeeper.ORIGINAL_NOTE_TITLE";
+    public static final String ORIGINAL_NOTE_TEXT = "com.jwhh.jim.notekeeper.ORIGINAL_NOTE_TEXT";
+    public static final int ID_NOT_SET = -1;
+    private NoteInfo noteInfo = new NoteInfo(DataManager.getInstance().getCourses().get(0), "", "");
     private boolean isNewNote;
-    private int notePosition;
+    private int noteId;
     private boolean isCancelling;
-    private NoteActivityViewModel viewModel;
-
+    private String originalNoteCourseId;
+    private String originalNoteTitle;
+    private String originalNoteText;
+    private NoteKeeperOpenHelper dbOpenHelper;
+    private Cursor noteCursor;
+    private int courseIdPos;
+    private int noteTitlePos;
+    private int noteTextPos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,12 +45,7 @@ public class NoteActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         setSupportActionBar(binding.toolbar);
 
-        viewModel = new ViewModelProvider(this).get(NoteActivityViewModel.class);
-
-        if (viewModel.isNewlyCreated && savedInstanceState != null)
-            viewModel.restoreState(savedInstanceState);
-
-        viewModel.isNewlyCreated = false;
+        dbOpenHelper = new NoteKeeperOpenHelper(this);
 
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
         ArrayAdapter<CourseInfo> adapterCourses =
@@ -47,10 +54,16 @@ public class NoteActivity extends AppCompatActivity {
         binding.spinnerCourses.setAdapter(adapterCourses);
 
         readDisplayStateValues();
-        saveOriginalNoteValues();
-        setupUpButton();
+        if (savedInstanceState == null) {
+            saveOriginalNoteValues();
+        } else {
+            restoreOriginalNoteValues(savedInstanceState);
+        }
+
         if (!isNewNote)
-            displayNote();
+            loadNoteData();
+
+        setupUpButton();
     }
 
     private void setupUpButton() {
@@ -63,81 +76,124 @@ public class NoteActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        dbOpenHelper.close();
+        super.onDestroy();
+    }
+
+    @Override
     public boolean onSupportNavigateUp() {
         isCancelling = true;
         finish();
         return super.onSupportNavigateUp();
     }
 
+    private void loadNoteData() {
+        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+
+        String selection = NoteInfoEntry._ID + " = ?";
+
+        String[] selectionArgs = {Integer.toString(noteId)};
+
+        String[] noteColumns = {
+                NoteInfoEntry.COLUMN_COURSE_ID,
+                NoteInfoEntry.COLUMN_NOTE_TITLE,
+                NoteInfoEntry.COLUMN_NOTE_TEXT
+        };
+        noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+                selection, selectionArgs, null, null, null);
+        courseIdPos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        noteTitlePos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        noteTextPos = noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
+        noteCursor.moveToNext();
+        displayNote();
+    }
+
+
+    private void restoreOriginalNoteValues(Bundle savedInstanceState) {
+        originalNoteCourseId = savedInstanceState.getString(ORIGINAL_NOTE_COURSE_ID);
+        originalNoteTitle = savedInstanceState.getString(ORIGINAL_NOTE_TITLE);
+        originalNoteText = savedInstanceState.getString(ORIGINAL_NOTE_TEXT);
+    }
+
     private void saveOriginalNoteValues() {
         if (isNewNote)
             return;
-        viewModel.originalNoteCourseId = note.getCourse().getCourseId();
-        viewModel.originalNoteTitle = note.getTitle();
-        viewModel.originalNoteText = note.getText();
-
+        originalNoteCourseId = noteInfo.getCourse().getCourseId();
+        originalNoteTitle = noteInfo.getTitle();
+        originalNoteText = noteInfo.getText();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         if (isCancelling) {
+            Log.i(TAG, "Cancelling note at position: " + noteId);
             if (isNewNote) {
-                DataManager.getInstance().removeNote(notePosition);
+                DataManager.getInstance().removeNote(noteId);
             } else {
                 storePreviousNoteValues();
             }
         } else {
             saveNote();
         }
-    }
-
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        viewModel.saveState(outState);
+        Log.d(TAG, "onPause");
     }
 
     private void storePreviousNoteValues() {
-        CourseInfo course = DataManager.getInstance().getCourse(viewModel.originalNoteCourseId);
-        note.setCourse(course);
-        note.setTitle(viewModel.originalNoteTitle);
-        note.setText(viewModel.originalNoteText);
+        CourseInfo course = DataManager.getInstance().getCourse(originalNoteCourseId);
+        noteInfo.setCourse(course);
+        noteInfo.setTitle(originalNoteTitle);
+        noteInfo.setText(originalNoteText);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(ORIGINAL_NOTE_COURSE_ID, originalNoteCourseId);
+        outState.putString(ORIGINAL_NOTE_TITLE, originalNoteTitle);
+        outState.putString(ORIGINAL_NOTE_TEXT, originalNoteText);
     }
 
     private void saveNote() {
-        note.setCourse((CourseInfo) binding.spinnerCourses.getSelectedItem());
-        note.setTitle(binding.textNoteTitle.getText().toString());
-        note.setText(binding.textNoteText.getText().toString());
+        noteInfo.setCourse((CourseInfo) binding.spinnerCourses.getSelectedItem());
+        noteInfo.setTitle(binding.textNoteTitle.getText().toString());
+        noteInfo.setText(binding.textNoteText.getText().toString());
     }
 
     private void displayNote() {
+        String courseId = noteCursor.getString(courseIdPos);
+        String noteTitle = noteCursor.getString(noteTitlePos);
+        String noteText = noteCursor.getString(noteTextPos);
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
-        int courseIndex = courses.indexOf(note.getCourse());
+        CourseInfo course = DataManager.getInstance().getCourse(courseId);
+        int courseIndex = courses.indexOf(course);
         binding.spinnerCourses.setSelection(courseIndex);
-        binding.textNoteTitle.setText(note.getTitle());
-        binding.textNoteText.setText(note.getText());
+        binding.textNoteTitle.setText(noteTitle);
+        binding.textNoteText.setText(noteText);
     }
 
     private void readDisplayStateValues() {
         Intent intent = getIntent();
-        int position = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET);
-        isNewNote = position == POSITION_NOT_SET;
+        noteId = intent.getIntExtra(NOTE_ID, ID_NOT_SET);
+        isNewNote = noteId == ID_NOT_SET;
         if (isNewNote) {
             createNewNote();
-        } else {
-            note = DataManager.getInstance().getNotes().get(position);
         }
+
+        Log.i(TAG, "mNoteId: " + noteId);
+//        mNote = DataManager.getInstance().getNotes().get(mNoteId);
+
     }
 
     private void createNewNote() {
         DataManager dm = DataManager.getInstance();
-        notePosition = dm.createNewNote();
-        note = dm.getNotes().get(notePosition);
+        noteId = dm.createNewNote();
+//        mNote = dm.getNotes().get(mNoteId);
     }
 
     @Override
-    public boolean onCreateOptionsMenu(@NonNull Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_note, menu);
         return true;
@@ -162,17 +218,19 @@ public class NoteActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onPrepareOptionsMenu(@NonNull Menu menu) {
-        MenuItem menuItem = menu.findItem(R.id.action_next);
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.action_next);
         int lastNoteIndex = DataManager.getInstance().getNotes().size() - 1;
-        menuItem.setEnabled(notePosition < lastNoteIndex);
+        item.setEnabled(noteId < lastNoteIndex);
         return super.onPrepareOptionsMenu(menu);
     }
 
     private void moveNext() {
         saveNote();
-        ++notePosition;
-        note = DataManager.getInstance().getNotes().get(notePosition);
+
+        ++noteId;
+        noteInfo = DataManager.getInstance().getNotes().get(noteId);
+
         saveOriginalNoteValues();
         displayNote();
         invalidateOptionsMenu();
@@ -182,7 +240,7 @@ public class NoteActivity extends AppCompatActivity {
         CourseInfo course = (CourseInfo) binding.spinnerCourses.getSelectedItem();
         String subject = binding.textNoteTitle.getText().toString();
         String text = "Checkout what I learned in the Pluralsight course \"" +
-                course.getTitle() + "\"\n" + binding.textNoteText.getText();
+                course.getTitle() + "\"\n" + binding.textNoteText.getText().toString();
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("message/rfc2822");
         intent.putExtra(Intent.EXTRA_SUBJECT, subject);

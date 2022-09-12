@@ -11,14 +11,14 @@ import com.example.notekeeper.databinding.ItemNoteListBinding;
 import java.util.List;
 
 public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteListViewHolder> {
-    private OnItemClickListener onItemClickListener;
+    private OnNoteItemClickListener onItemClickListener;
     private final List<NoteInfo> localDataSet;
 
     public NoteListAdapter(List<NoteInfo> localDataSet) {
         this.localDataSet = localDataSet;
     }
 
-    public void setOnItemClickedListener(OnItemClickListener onItemClickListener) {
+    public void setOnItemClickedListener(OnNoteItemClickListener onItemClickListener) {
         this.onItemClickListener = onItemClickListener;
     }
 
@@ -31,7 +31,7 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteLi
     @Override
     public void onBindViewHolder(@NonNull NoteListViewHolder holder, int position) {
         NoteInfo item = localDataSet.get(position);
-        holder.bind(onItemClickListener, position, item);
+        holder.bind(onItemClickListener, item);
     }
 
     @Override
@@ -53,9 +53,9 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteLi
             return new NoteListViewHolder(binding);
         }
 
-        public void bind(OnItemClickListener onItemClickListener, int position, NoteInfo noteInfo) {
+        public void bind(OnNoteItemClickListener onItemClickListener, NoteInfo noteInfo) {
             if (onItemClickListener != null)
-                binding.getRoot().setOnClickListener(view -> onItemClickListener.onItemClick(position));
+                binding.getRoot().setOnClickListener(view -> onItemClickListener.onItemClick(noteInfo));
             binding.setNote(noteInfo);
         }
     }

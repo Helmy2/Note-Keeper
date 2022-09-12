@@ -81,7 +81,7 @@ public class NoteListActivity extends AppCompatActivity {
     }
 
     private void initializeDisplayContent() {
-        DataManager.leadFromDatabase(dbOpenHelper);
+        DataManager.loadFromDatabase(dbOpenHelper);
 
         notesLayoutManager = new LinearLayoutManager(this);
         coursesLayoutManager = new GridLayoutManager(this, 2);
@@ -140,9 +140,9 @@ public class NoteListActivity extends AppCompatActivity {
     }
 
 
-    private void onNoteItemClicked(int position) {
+    private void onNoteItemClicked(NoteInfo noteInfo) {
         Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
-        intent.putExtra(NoteActivity.NOTE_POSITION, position);
+        intent.putExtra(NoteActivity.NOTE_ID, noteInfo.getId());
         startActivity(intent);
     }
 
