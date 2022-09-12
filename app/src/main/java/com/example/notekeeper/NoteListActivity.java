@@ -81,6 +81,8 @@ public class NoteListActivity extends AppCompatActivity {
     }
 
     private void initializeDisplayContent() {
+        DataManager.leadFromDatabase(dbOpenHelper);
+
         notesLayoutManager = new LinearLayoutManager(this);
         coursesLayoutManager = new GridLayoutManager(this, 2);
 
@@ -115,8 +117,6 @@ public class NoteListActivity extends AppCompatActivity {
         binding.listNotes.setLayoutManager(notesLayoutManager);
         binding.listNotes.setAdapter(noteListAdapter);
         noteListAdapter.setOnItemClickedListener(this::onNoteItemClicked);
-
-        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
 
         binding.navView.getMenu().findItem(R.id.nav_notes).setChecked(true);
     }

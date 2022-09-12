@@ -1,5 +1,11 @@
 package com.example.notekeeper;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+
+import com.example.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
+import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,13 +17,81 @@ public class DataManager {
     private List<NoteInfo> mNotes = new ArrayList<>();
 
     public static DataManager getInstance() {
-        if(ourInstance == null) {
+        if (ourInstance == null) {
             ourInstance = new DataManager();
-            ourInstance.initializeCourses();
-            ourInstance.initializeExampleNotes();
+//            ourInstance.initializeCourses();
+//            ourInstance.initializeExampleNotes();
         }
         return ourInstance;
     }
+
+    public static void leadFromDatabase(NoteKeeperOpenHelper dbHelper) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        final String[] courseColumns = {
+                CourseInfoEntry.COLUMN_COURSE_ID,
+                CourseInfoEntry.COLUMN_COURSE_TITLE
+        };
+        String courseOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE + " DESC";
+        Cursor courseCursor = db.query(
+                CourseInfoEntry.TABLE_NAME, courseColumns,
+                null, null, null, null,
+                courseOrderBy
+        );
+        loadCoursesFromDatabase(courseCursor);
+
+
+        final String[] notesColumns = {
+                NoteInfoEntry.COLUMN_NOTE_TITLE,
+                NoteInfoEntry.COLUMN_NOTE_TEXT,
+                NoteInfoEntry.COLUMN_COURSE_ID,
+        };
+        String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+        Cursor noteCursor = db.query(
+                NoteInfoEntry.TABLE_NAME, notesColumns,
+                null, null, null, null, noteOrderBy
+        );
+        loadNoteFormDatabase(noteCursor);
+    }
+
+    private static void loadNoteFormDatabase(Cursor cursor) {
+        int noteTitlePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        int noteTextPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
+        int courseIdPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+
+        DataManager dataManager = getInstance();
+        dataManager.mNotes.clear();
+
+        while (cursor.moveToNext()) {
+            String noteTitle = cursor.getString(noteTitlePos);
+            String noteText = cursor.getString(noteTextPos);
+            String curseId = cursor.getString(courseIdPos);
+            NoteInfo noteInfo = new NoteInfo(dataManager.getCourse(curseId), noteTitle, noteText);
+
+            dataManager.mNotes.add(noteInfo);
+        }
+
+        cursor.close();
+    }
+
+    private static void loadCoursesFromDatabase(Cursor cursor) {
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        int courseTitlePos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
+
+        DataManager dataManager = getInstance();
+        dataManager.mCourses.clear();
+
+        while (cursor.moveToNext()) {
+            String courseId = cursor.getString(courseIdPos);
+            String courseTitle = cursor.getString(courseTitlePos);
+            CourseInfo courseInfo = new CourseInfo(courseId, courseTitle, null);
+
+            dataManager.mCourses.add(courseInfo);
+        }
+
+        cursor.close();
+    }
+
 
     public String getCurrentUserName() {
         return "Jim Wilson";
@@ -38,8 +112,8 @@ public class DataManager {
     }
 
     public int findNote(NoteInfo note) {
-        for(int index = 0; index < mNotes.size(); index++) {
-            if(note.equals(mNotes.get(index)))
+        for (int index = 0; index < mNotes.size(); index++) {
+            if (note.equals(mNotes.get(index)))
                 return index;
         }
 
@@ -64,8 +138,8 @@ public class DataManager {
 
     public List<NoteInfo> getNotes(CourseInfo course) {
         ArrayList<NoteInfo> notes = new ArrayList<>();
-        for(NoteInfo note:mNotes) {
-            if(course.equals(note.getCourse()))
+        for (NoteInfo note : mNotes) {
+            if (course.equals(note.getCourse()))
                 notes.add(note);
         }
         return notes;
@@ -73,8 +147,8 @@ public class DataManager {
 
     public int getNoteCount(CourseInfo course) {
         int count = 0;
-        for(NoteInfo note:mNotes) {
-            if(course.equals(note.getCourse()))
+        for (NoteInfo note : mNotes) {
+            if (course.equals(note.getCourse()))
                 count++;
         }
         return count;
