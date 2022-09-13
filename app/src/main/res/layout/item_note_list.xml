@@ -3,13 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <data>
-
-        <variable
-            name="note"
-            type="com.example.notekeeper.NoteInfo" />
-    </data>
-
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -46,7 +39,6 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="@{note.course.title}"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/imageView3"
                     app:layout_constraintTop_toTopOf="parent"
@@ -56,7 +48,6 @@
                     android:id="@+id/textBody"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="@{note.title}"
                     android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/textTitle"

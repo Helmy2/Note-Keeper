@@ -7,11 +7,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
+import android.widget.SimpleCursorAdapter;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 import com.example.notekeeper.databinding.ActivityNoteBinding;
 
@@ -37,6 +39,7 @@ public class NoteActivity extends AppCompatActivity {
     private int courseIdPos;
     private int noteTitlePos;
     private int noteTextPos;
+    SimpleCursorAdapter adapterCourses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,11 +50,16 @@ public class NoteActivity extends AppCompatActivity {
 
         dbOpenHelper = new NoteKeeperOpenHelper(this);
 
-        List<CourseInfo> courses = DataManager.getInstance().getCourses();
-        ArrayAdapter<CourseInfo> adapterCourses =
-                new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, courses);
+
+        adapterCourses = new SimpleCursorAdapter(
+                this, android.R.layout.simple_spinner_item, null,
+                new String[]{CourseInfoEntry.COLUMN_COURSE_TITLE},
+                new int[]{android.R.id.text1}, 0
+        );
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         binding.spinnerCourses.setAdapter(adapterCourses);
+
+        leadCourseDate();
 
         readDisplayStateValues();
         if (savedInstanceState == null) {
@@ -64,6 +72,23 @@ public class NoteActivity extends AppCompatActivity {
             loadNoteData();
 
         setupUpButton();
+    }
+
+    private void leadCourseDate() {
+        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+        String[] courseColumn = {
+                CourseInfoEntry.COLUMN_COURSE_TITLE,
+                CourseInfoEntry.COLUMN_COURSE_ID,
+                CourseInfoEntry._ID
+        };
+
+        Cursor cursor = db.query(
+                CourseInfoEntry.TABLE_NAME,
+                courseColumn,
+                null, null, null, null,
+                CourseInfoEntry.COLUMN_COURSE_TITLE
+        );
+        adapterCourses.changeCursor(cursor);
     }
 
     private void setupUpButton() {
@@ -148,7 +173,7 @@ public class NoteActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(ORIGINAL_NOTE_COURSE_ID, originalNoteCourseId);
         outState.putString(ORIGINAL_NOTE_TITLE, originalNoteTitle);
@@ -165,12 +190,28 @@ public class NoteActivity extends AppCompatActivity {
         String courseId = noteCursor.getString(courseIdPos);
         String noteTitle = noteCursor.getString(noteTitlePos);
         String noteText = noteCursor.getString(noteTextPos);
-        List<CourseInfo> courses = DataManager.getInstance().getCourses();
-        CourseInfo course = DataManager.getInstance().getCourse(courseId);
-        int courseIndex = courses.indexOf(course);
+
+        int courseIndex = getIndexOfCourseId(courseId);
         binding.spinnerCourses.setSelection(courseIndex);
         binding.textNoteTitle.setText(noteTitle);
         binding.textNoteText.setText(noteText);
+    }
+
+    private int getIndexOfCourseId(String courseId) {
+        Cursor cursor = adapterCourses.getCursor();
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        int courseRowIndex = 0;
+
+        boolean more = cursor.moveToFirst();
+        while(more) {
+            String cursorCourseId = cursor.getString(courseIdPos);
+            if(courseId.equals(cursorCourseId))
+                break;
+
+            courseRowIndex++;
+            more = cursor.moveToNext();
+        }
+        return courseRowIndex;
     }
 
     private void readDisplayStateValues() {
@@ -193,7 +234,7 @@ public class NoteActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(@NonNull Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_note, menu);
         return true;

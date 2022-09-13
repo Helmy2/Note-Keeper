@@ -2,6 +2,7 @@ package com.example.notekeeper;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.Menu;
@@ -18,6 +19,7 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 import com.example.notekeeper.databinding.ActivityNoteListBinding;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -63,14 +65,27 @@ public class NoteListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        noteListAdapter.notifyDataSetChanged();
+        loadNotes();
         updateNavHeader();
+    }
+
+    private void loadNotes() {
+        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+        final String[] noteColumns = {
+                NoteInfoEntry.COLUMN_NOTE_TITLE,
+                NoteInfoEntry.COLUMN_COURSE_ID,
+                NoteInfoEntry._ID};
+
+        String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+        final Cursor noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+                null, null, null, null, noteOrderBy);
+        noteListAdapter.changeCursor(noteCursor);
     }
 
     private void updateNavHeader() {
         View headerView = binding.navView.getHeaderView(0);
-        TextView textUserName = (TextView) headerView.findViewById(R.id.text_user_name);
-        TextView textEmailAddress = (TextView) headerView.findViewById(R.id.text_email_address);
+        TextView textUserName = headerView.findViewById(R.id.text_user_name);
+        TextView textEmailAddress = headerView.findViewById(R.id.text_email_address);
 
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
         String userName = pref.getString("user_display_name", "");
@@ -86,8 +101,7 @@ public class NoteListActivity extends AppCompatActivity {
         notesLayoutManager = new LinearLayoutManager(this);
         coursesLayoutManager = new GridLayoutManager(this, 2);
 
-        List<NoteInfo> notes = DataManager.getInstance().getNotes();
-        noteListAdapter = new NoteListAdapter(notes);
+        noteListAdapter = new NoteListAdapter(null);
 
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
         courseListAdapter = new CourseListAdapter(courses);
@@ -108,7 +122,7 @@ public class NoteListActivity extends AppCompatActivity {
             handleSelection(R.string.nav_send_message);
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer =  findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -116,7 +130,7 @@ public class NoteListActivity extends AppCompatActivity {
     private void displayNotes() {
         binding.listNotes.setLayoutManager(notesLayoutManager);
         binding.listNotes.setAdapter(noteListAdapter);
-        noteListAdapter.setOnItemClickedListener(this::onNoteItemClicked);
+        noteListAdapter.setOnItemClickedListener(id -> onNoteItemClicked(id));
 
         binding.navView.getMenu().findItem(R.id.nav_notes).setChecked(true);
     }
@@ -140,9 +154,9 @@ public class NoteListActivity extends AppCompatActivity {
     }
 
 
-    private void onNoteItemClicked(NoteInfo noteInfo) {
+    private void onNoteItemClicked(int id) {
         Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
-        intent.putExtra(NoteActivity.NOTE_ID, noteInfo.getId());
+        intent.putExtra(NoteActivity.NOTE_ID, id);
         startActivity(intent);
     }
 

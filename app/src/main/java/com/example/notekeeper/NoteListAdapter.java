@@ -1,5 +1,8 @@
 package com.example.notekeeper;
 
+import static com.example.notekeeper.NoteKeeperDatabaseContract.*;
+
+import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -12,10 +15,31 @@ import java.util.List;
 
 public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteListViewHolder> {
     private OnNoteItemClickListener onItemClickListener;
-    private final List<NoteInfo> localDataSet;
+    private Cursor cursor;
+    private int coursePos;
+    private int noteTitlePos;
+    private int idPos;
 
-    public NoteListAdapter(List<NoteInfo> localDataSet) {
-        this.localDataSet = localDataSet;
+    public NoteListAdapter(Cursor cursor) {
+        this.cursor = cursor;
+        populateColumnPositions();
+    }
+
+    private void populateColumnPositions() {
+        if (cursor == null)
+            return;
+        // Get column indexes from mCursor
+        coursePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        noteTitlePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        idPos = cursor.getColumnIndex(NoteInfoEntry._ID);
+    }
+
+    public void changeCursor(Cursor cursor) {
+//        if (cursor != null)
+//            cursor.close();
+        this.cursor = cursor;
+        populateColumnPositions();
+        notifyDataSetChanged();
     }
 
     public void setOnItemClickedListener(OnNoteItemClickListener onItemClickListener) {
@@ -30,13 +54,16 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteLi
 
     @Override
     public void onBindViewHolder(@NonNull NoteListViewHolder holder, int position) {
-        NoteInfo item = localDataSet.get(position);
-        holder.bind(onItemClickListener, item);
+        cursor.moveToPosition(position);
+        String course = cursor.getString(coursePos);
+        String noteTitle = cursor.getString(noteTitlePos);
+        int id = cursor.getInt(idPos);
+        holder.bind(onItemClickListener, course, noteTitle, id);
     }
 
     @Override
     public int getItemCount() {
-        return localDataSet.size();
+        return cursor == null ? 0 : cursor.getCount();
     }
 
     static class NoteListViewHolder extends RecyclerView.ViewHolder {
@@ -53,10 +80,11 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteLi
             return new NoteListViewHolder(binding);
         }
 
-        public void bind(OnNoteItemClickListener onItemClickListener, NoteInfo noteInfo) {
+        public void bind(OnNoteItemClickListener onItemClickListener, String course, String noteTitle, int id) {
             if (onItemClickListener != null)
-                binding.getRoot().setOnClickListener(view -> onItemClickListener.onItemClick(noteInfo));
-            binding.setNote(noteInfo);
+                binding.getRoot().setOnClickListener(view -> onItemClickListener.onItemClick(id));
+            binding.textTitle.setText(course);
+            binding.textBody.setText(noteTitle);
         }
     }
 }
