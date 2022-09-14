@@ -1,6 +1,10 @@
 package com.example.notekeeper;
 
+import android.annotation.SuppressLint;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -25,7 +29,8 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
-public class NoteListActivity extends AppCompatActivity {
+public class NoteListActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+    public static final int LOADER_NOTES = 0;
     ActivityNoteListBinding binding;
     NoteListAdapter noteListAdapter;
     CourseListAdapter courseListAdapter;
@@ -65,21 +70,8 @@ public class NoteListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadNotes();
+        getLoaderManager().restartLoader(LOADER_NOTES, null, this);
         updateNavHeader();
-    }
-
-    private void loadNotes() {
-        SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
-        final String[] noteColumns = {
-                NoteInfoEntry.COLUMN_NOTE_TITLE,
-                NoteInfoEntry.COLUMN_COURSE_ID,
-                NoteInfoEntry._ID};
-
-        String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
-        final Cursor noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
-                null, null, null, null, noteOrderBy);
-        noteListAdapter.changeCursor(noteCursor);
     }
 
     private void updateNavHeader() {
@@ -122,7 +114,7 @@ public class NoteListActivity extends AppCompatActivity {
             handleSelection(R.string.nav_send_message);
         }
 
-        DrawerLayout drawer =  findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -130,7 +122,7 @@ public class NoteListActivity extends AppCompatActivity {
     private void displayNotes() {
         binding.listNotes.setLayoutManager(notesLayoutManager);
         binding.listNotes.setAdapter(noteListAdapter);
-        noteListAdapter.setOnItemClickedListener(id -> onNoteItemClicked(id));
+        noteListAdapter.setOnItemClickedListener(this::onNoteItemClicked);
 
         binding.navView.getMenu().findItem(R.id.nav_notes).setChecked(true);
     }
@@ -201,4 +193,41 @@ public class NoteListActivity extends AppCompatActivity {
     }
 
 
+    @SuppressLint("StaticFieldLeak")
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        CursorLoader loader = null;
+        if(id == LOADER_NOTES) {
+            loader = new CursorLoader(this) {
+                @Override
+                public Cursor loadInBackground() {
+                    SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+                    final String[] noteColumns = {
+                            NoteInfoEntry._ID,
+                            NoteInfoEntry.COLUMN_NOTE_TITLE,
+                            NoteInfoEntry.COLUMN_COURSE_ID};
+                    final String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID +
+                            "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+                    return db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+                            null, null, null, null, noteOrderBy);
+                }
+            };
+        }
+        return loader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader loader, Cursor data) {
+        if(loader.getId() == LOADER_NOTES)  {
+            noteListAdapter.changeCursor(data);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader loader) {
+        if(loader.getId() == LOADER_NOTES)  {
+            noteListAdapter.changeCursor(null);
+        }
+
+    }
 }
