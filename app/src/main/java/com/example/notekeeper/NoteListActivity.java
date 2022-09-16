@@ -23,6 +23,7 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 import com.example.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 import com.example.notekeeper.databinding.ActivityNoteListBinding;
 import com.google.android.material.snackbar.Snackbar;
@@ -197,18 +198,27 @@ public class NoteListActivity extends AppCompatActivity implements LoaderManager
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         CursorLoader loader = null;
-        if(id == LOADER_NOTES) {
+        if (id == LOADER_NOTES) {
             loader = new CursorLoader(this) {
                 @Override
                 public Cursor loadInBackground() {
                     SQLiteDatabase db = dbOpenHelper.getReadableDatabase();
+
                     final String[] noteColumns = {
-                            NoteInfoEntry._ID,
+                            NoteInfoEntry.getQName(NoteInfoEntry._ID),
                             NoteInfoEntry.COLUMN_NOTE_TITLE,
-                            NoteInfoEntry.COLUMN_COURSE_ID};
-                    final String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID +
+                            CourseInfoEntry.COLUMN_COURSE_TITLE
+                    };
+
+                    final String noteOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE +
                             "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
-                    return db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+
+                    String tablesWithJoin = NoteInfoEntry.TABLE_NAME + " JOIN " +
+                            CourseInfoEntry.TABLE_NAME + " ON " +
+                            NoteInfoEntry.getQName(NoteInfoEntry.COLUMN_COURSE_ID) + " = " +
+                            CourseInfoEntry.getQName(CourseInfoEntry.COLUMN_COURSE_ID);
+
+                    return db.query(tablesWithJoin, noteColumns,
                             null, null, null, null, noteOrderBy);
                 }
             };
@@ -218,14 +228,14 @@ public class NoteListActivity extends AppCompatActivity implements LoaderManager
 
     @Override
     public void onLoadFinished(Loader loader, Cursor data) {
-        if(loader.getId() == LOADER_NOTES)  {
+        if (loader.getId() == LOADER_NOTES) {
             noteListAdapter.changeCursor(data);
         }
     }
 
     @Override
     public void onLoaderReset(Loader loader) {
-        if(loader.getId() == LOADER_NOTES)  {
+        if (loader.getId() == LOADER_NOTES) {
             noteListAdapter.changeCursor(null);
         }
 

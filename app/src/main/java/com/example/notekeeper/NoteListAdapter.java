@@ -28,15 +28,15 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.NoteLi
     private void populateColumnPositions() {
         if (cursor == null)
             return;
-        // Get column indexes from mCursor
-        coursePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+
+        coursePos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
         noteTitlePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
         idPos = cursor.getColumnIndex(NoteInfoEntry._ID);
     }
 
     public void changeCursor(Cursor cursor) {
-//        if (cursor != null)
-//            cursor.close();
+        if (this.cursor != null)
+            this.cursor.close();
         this.cursor = cursor;
         populateColumnPositions();
         notifyDataSetChanged();
