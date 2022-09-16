@@ -2,11 +2,13 @@ package com.example.notekeeper;
 
 import android.annotation.SuppressLint;
 import android.app.LoaderManager;
+import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -75,7 +77,7 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
         }
 
         if (!isNewNote)
-             getLoaderManager().initLoader(LOADER_NOTES, null,this);
+            getLoaderManager().initLoader(LOADER_NOTES, null, this);
 
         setupUpButton();
     }
@@ -122,7 +124,7 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
         if (isCancelling) {
             Log.i(TAG, "Cancelling note at position: " + noteId);
             if (isNewNote) {
-                DataManager.getInstance().removeNote(noteId);
+                deleteNoteFromDatabase();
             } else {
                 storePreviousNoteValues();
             }
@@ -130,6 +132,21 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
             saveNote();
         }
         Log.d(TAG, "onPause");
+    }
+
+    private void deleteNoteFromDatabase() {
+        final String selection = NoteInfoEntry._ID + " = ?";
+        final String[] selectionArgs = {Integer.toString(noteId)};
+
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] params) {
+                SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+                db.delete(NoteInfoEntry.TABLE_NAME, selection, selectionArgs);
+                return null;
+            }
+        };
+        task.execute();
     }
 
     private void storePreviousNoteValues() {
@@ -148,9 +165,31 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void saveNote() {
-//        noteInfo.setCourse((CourseInfo) binding.spinnerCourses.getSelectedItem());
-//        noteInfo.setTitle(binding.textNoteTitle.getText().toString());
-//        noteInfo.setText(binding.textNoteText.getText().toString());
+        String courseId = selectedCourseId();
+        String noteTitle = binding.textNoteTitle.getText().toString();
+        String noteText = binding.textNoteText.getText().toString();
+        saveNoteToDatabase(courseId, noteTitle, noteText);
+    }
+
+    private String selectedCourseId() {
+        int selectedPosition = binding.spinnerCourses.getSelectedItemPosition();
+        Cursor cursor = adapterCourses.getCursor();
+        cursor.moveToPosition(selectedPosition);
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        return cursor.getString(courseIdPos);
+    }
+
+    private void saveNoteToDatabase(String courseId, String noteTitle, String noteText) {
+        String selection = NoteInfoEntry._ID + " = ?";
+        String[] selectionArgs = {Integer.toString(noteId)};
+
+        ContentValues values = new ContentValues();
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, courseId);
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, noteTitle);
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, noteText);
+
+        SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+        db.update(NoteInfoEntry.TABLE_NAME, values, selection, selectionArgs);
     }
 
     private void displayNote() {
@@ -196,9 +235,13 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void createNewNote() {
-        DataManager dm = DataManager.getInstance();
-        noteId = dm.createNewNote();
-//        mNote = dm.getNotes().get(mNoteId);
+        ContentValues values = new ContentValues();
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, "");
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, "");
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, "");
+
+        SQLiteDatabase db = dbOpenHelper.getWritableDatabase();
+        noteId = (int) db.insert(NoteInfoEntry.TABLE_NAME, null, values);
     }
 
     @Override
@@ -260,7 +303,7 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         CursorLoader loader = null;
-        if(id == LOADER_NOTES)
+        if (id == LOADER_NOTES)
             loader = createLoaderNotes();
         else if (id == LOADER_COURSES)
             loader = createLoaderCourses();
@@ -311,9 +354,9 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if(loader.getId() == LOADER_NOTES)
+        if (loader.getId() == LOADER_NOTES)
             loadFinishedNotes(data);
-        else if(loader.getId() == LOADER_COURSES) {
+        else if (loader.getId() == LOADER_COURSES) {
             adapterCourses.changeCursor(data);
             coursesQueryFinished = true;
             displayNoteWhenQueriesFinished();
@@ -334,16 +377,16 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void displayNoteWhenQueriesFinished() {
-        if(notesQueryFinished && coursesQueryFinished)
+        if (notesQueryFinished && coursesQueryFinished)
             displayNote();
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        if(loader.getId() == LOADER_NOTES) {
-            if(noteCursor != null)
+        if (loader.getId() == LOADER_NOTES) {
+            if (noteCursor != null)
                 noteCursor.close();
-        } else if(loader.getId() == LOADER_COURSES) {
+        } else if (loader.getId() == LOADER_COURSES) {
             adapterCourses.changeCursor(null);
         }
     }
